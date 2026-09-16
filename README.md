@@ -1,346 +1,260 @@
-# ⚡ The Fresh Programming Language
+Add C++ OOP Concepts to Fresh Language
+Fresh currently supports struct as flat data records without behavior. This plan adds full C++-style Object-Oriented Programming: classes with methods, constructors, this, single inheritance, and method overriding.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/CodeClosed/fresh-lang/main/vscode-extension/icon.png" width="100" height="100" alt="Fresh Logo" />
-</p>
+Proposed OOP Syntax for Fresh
+fresh
 
-<p align="center">
-  <b>A modern, statically-typed compiled language featuring a Pratt parser, optimizing bytecode compiler, stack-based Virtual Machine with mark-and-sweep GC, native C transpilation, closures, pattern matching, and developer tooling.</b>
-</p>
-
-<p align="center">
-  <a href="https://pypi.org/project/fresh-lang/"><img src="https://img.shields.io/pypi/v/fresh-lang.svg?color=blue&label=PyPI%20package" alt="PyPI version" /></a>
-  <img src="https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue?logo=python" alt="Python Versions" />
-  <img src="https://img.shields.io/badge/Tests-90%20Passing-brightgreen?logo=pytest" alt="Test Status" />
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platforms" />
-</p>
-
----
-
-## 📑 Table of Contents
-
-- [🚀 Quickstart & Installation](#-quickstart--installation)
-- [🌟 Key Highlights & Language Design](#-key-highlights--language-design)
-- [🏗 Architecture & Compiler Pipeline](#-architecture--compiler-pipeline)
-- [💻 Command-Line Interface (CLI)](#-command-line-interface-cli)
-- [🛠 VS Code Integration & 1-Click Execution](#-vs-code-integration--1-click-execution)
-- [🧩 Feature Showcase & Code Examples](#-feature-showcase--code-examples)
-- [📂 Project Directory Structure](#-project-directory-structure)
-- [📚 Documentation Index](#-documentation-index)
-- [🧪 Running the Test Suite](#-running-the-test-suite)
-- [📄 License](#-license)
-
----
-
-## 🚀 Quickstart & Installation
-
-### Option 1: Install from PyPI (Recommended)
-
-Anyone on **Windows, macOS, or Linux** can install Fresh globally with one command:
-
-```bash
-pip install fresh-lang
-```
-
-### Option 2: Clone from GitHub
-
-```bash
-git clone https://github.com/CodeClosed/fresh-lang.git
-cd fresh-lang
-python -m pip install -e .
-```
-
----
-
-### 2. Write Your First Fresh Program
-
-Create a file named `hello.fresh`:
-
-```fresh
-// hello.fresh
-fn greet(name: string) -> string {
-    return "Hello, " + name + "! Welcome to Fresh ⚡";
+// ── Base class ──────────────────────────────────────────
+class Animal {
+name: string,
+age: int
+constructor(name: string, age: int) {
+this.name = name;
+this.age = age;
 }
+fn speak() -> string {
+return this.name + " makes a sound";
+}
+fn get_info() -> string {
+return this.name + " (age " + to_string(this.age) + ")";
+}
+}
+// ── Derived class (single inheritance) ──────────────────
+class Dog : Animal {
+breed: string
+constructor(name: string, age: int, breed: string) {
+super(name, age);
+this.breed = breed;
+}
+// Override base method
+fn speak() -> string {
+return this.name + " says Woof!";
+}
+fn fetch(item: string) -> string {
+return this.name + " fetches " + item;
+}
+}
+// ── Usage ───────────────────────────────────────────────
+let dog = Dog("Rex", 5, "German Shepherd");
+println(dog.speak()); // Rex says Woof!
+println(dog.get_info()); // Rex (age 5) — inherited method
+println(dog.fetch("ball")); // Rex fetches ball
+User Review Required
+IMPORTANT
 
-let message = greet("Developer");
-println(message);
-```
+Syntax Design Decisions — The proposed syntax uses:
 
-### 3. Run It!
+class Name { fields, constructor, methods } (C++/Java-style)
+constructor(...) instead of **init** or fn Name(...) (explicit, readable)
+this.field for instance access (C++/Java convention)
+class Child : Parent for inheritance (C++ convention)
+super(args) for parent constructor calls
+If you prefer different keywords (e.g., new for instantiation, extends instead of :), please let me know.
 
-```bash
-# Direct CLI command
-fresh run hello.fresh
+IMPORTANT
 
-# Universal Python module invocation (always works in any terminal)
-python -m fresh run hello.fresh
-```
+Scope of this change: This adds OOP on top of the existing struct system. Existing struct declarations remain fully supported and unchanged. Classes are a new, richer construct.
 
-**Output:**
-```text
-Hello, Developer! Welcome to Fresh ⚡
-```
+Open Questions
+Access modifiers? — Should we add public/private field modifiers in this version, or keep it simple with all-public access?
+new keyword for instantiation? — Should we require let dog = new Dog(...) or keep the current function-call style let dog = Dog(...)? The plan uses the current style to stay consistent with struct instantiation.
+Static methods? — Should we include static fn class methods in this version, or defer to a future iteration?
+Proposed Changes
+The change touches every layer of the compiler pipeline. Files are grouped by component and ordered dependency-first.
 
----
+Lexer (Token Definitions & Scanner)
+[MODIFY]
+tokens.py
+Add 4 new keyword tokens:
 
-## 🛠️ Complete Project Workflow Walkthrough
+CLASS — class
+CONSTRUCTOR — constructor
+THIS — this
+SUPER — super
+Add them to both the TokenType enum and the KEYWORDS lookup table.
 
-Here is the exact step-by-step lifecycle for creating, running, formatting, and compiling a Fresh application:
+[MODIFY]
+scanner.py
+No changes needed — the existing identifier/keyword scanning logic automatically picks up new KEYWORDS entries.
 
-### Step 1: Initialize a New Project
-```bash
-fresh init my_app
-# or: python -m fresh init my_app
-```
-This generates the standard project structure:
-```text
-my_app/
-├── fresh.toml             # Project manifest & configuration
-├── src/
-│   └── main.fresh         # Application entry point
-└── tests/
-    └── test_basic.fresh   # Initial test file
-```
+Type System
+[MODIFY]
+types.py
+Add FreshClass type:
 
-### Step 2: Run the Program (Bytecode VM)
-Run your application immediately through the optimized Fresh bytecode VM:
-```bash
-fresh run my_app/src/main.fresh
-# or: python -m fresh run my_app/src/main.fresh
-```
-**Output:**
-```text
-Hello from my_app!
-```
+python
 
-### Step 3: Check Types & Syntax (Static Analysis)
-Verify syntax, symbol scopes, and static types without executing:
-```bash
-fresh check my_app/src/main.fresh
-# or: python -m fresh check my_app/src/main.fresh
-```
-**Output:**
-```text
-Check passed for 'my_app/src/main.fresh'.
-```
+@dataclass
+class FreshClass(FreshType):
+name: str = ""
+fields: dict[str, FreshType] = field(default_factory=dict)
+methods: dict[str, FreshFunction] = field(default_factory=dict)
+parent: FreshClass | None = None
+Includes parent reference for inheritance chain lookups. Field/method resolution walks the chain.
 
-### Step 4: Auto-Format Source Code
-Format files according to official Fresh style guidelines:
-```bash
-# In-place formatting:
-fresh fmt my_app/src/main.fresh
+AST Node Definitions
+[MODIFY]
+ast.py
+Add 4 new AST node classes:
 
-# CI check (verifies formatting without modifying):
-fresh fmt --check my_app/src/main.fresh
-```
+Node Family Purpose
+ClassDeclStmt Stmt Class declaration with fields, constructor, methods, optional parent
+ThisExpr Expr this keyword reference inside methods
+SuperExpr Expr super.method() call
+ConstructorDecl Helper Constructor parameter list and body
+python
 
-### Step 5: Compile to Standalone Native Binary (C Machine Code)
-Transpile to C99 and compile with GCC/Clang/MSVC into a native binary:
-```bash
-fresh build my_app
-# or: python -m fresh build my_app
-```
-**Output:**
-```text
-Build succeeded: 'my_app/build/my_app.exe'.
-```
+@dataclass(slots=True)
+class ConstructorDecl:
+keyword: Token
+params: list[Parameter]
+body: list[Stmt]
+super_args: list[Expr] | None = None # super(args) call
+@dataclass(slots=True)
+class ClassDeclStmt(Stmt):
+name: Token
+parent_name: Token | None
+fields: list[StructField]
+constructor: ConstructorDecl | None
+methods: list[FnDeclStmt]
+@dataclass(slots=True)
+class ThisExpr(Expr):
+keyword: Token
+@dataclass(slots=True)
+class SuperExpr(Expr):
+keyword: Token
+method: Token # the method name after super.
+Update ASTPrinter to format these new nodes.
 
-### Step 6: Execute the Native Binary
-Run the zero-dependency compiled binary directly from your OS terminal:
-```bash
-# Windows:
-.\my_app\build\my_app.exe
+Parser
+[MODIFY]
+parser.py
+Declaration routing: Add TokenType.CLASS check in \_declaration() → \_class_declaration().
+\_class_declaration(): Parse the full class syntax:
+Class name, optional : ParentName
+{ body with field declarations, constructor(...), and fn method declarations }
+this prefix rule: Map TokenType.THIS → \_this_expr() in the Pratt prefix table.
+super prefix rule: Map TokenType.SUPER → \_super_expr() — expects super.method_name or super(args) (in constructors).
+Error synchronization: Add TokenType.CLASS to the synchronization set.
+Semantic Analysis — Resolver
+[MODIFY]
+resolver.py
+Pre-declare class names in the top-level pass (alongside functions and structs).
+Resolve ClassDeclStmt: Open a new scope, declare this, resolve constructor body and method bodies.
+Track class context: Add current_class state to validate this/super usage (only legal inside class methods/constructors).
+Resolve ThisExpr and SuperExpr: Validate they appear inside a class context.
+Semantic Analysis — Type Checker
+[MODIFY]
+type_checker.py
+Register class types: In the pre-pass, build FreshClass objects with field types, method signatures, and parent references.
+Check ClassDeclStmt: Validate constructor assignments, method return types, field types.
+Check ThisExpr: Return the current class type.
+Check SuperExpr: Return the parent class type and validate the method exists on the parent.
+Check method calls: On CallExpr where callee is FieldAccessExpr on a class instance, resolve the method signature.
+Inheritance compatibility: FreshClass subtypes should be compatible with parent types (\_types_compatible).
+Bytecode — Opcodes
+[MODIFY]
+opcodes.py
+Add new opcodes:
 
-# Linux / macOS:
-./my_app/build/my_app
-```
-**Output:**
-```text
-Hello from my_app!
-```
+Opcode Operands Description
+OP_CLASS_DEF name_idx, field_count Define a class (fields + methods)
+OP_METHOD name_idx Bind a closure as a method on the class
+OP_INHERIT — Copy parent methods into child class
+OP_GET_THIS — Push this (slot 0 of current method frame)
+OP_SUPER_INVOKE method_name_idx, arg_count Invoke a method on the superclass
+Bytecode Compiler
+[MODIFY]
+compiler.py
+Compile ClassDeclStmt:
+Emit OP_CLASS_DEF with field names
+If parent: emit OP_GET_GLOBAL for parent, OP_INHERIT
+Compile constructor as a special function (with this in slot 0)
+Compile each method as a closure, emit OP_METHOD to bind it
+Define the class name as a global
+Compile ThisExpr: Emit OP_GET_LOCAL for slot 0 (this is always slot 0 in methods).
+Compile SuperExpr: Emit OP_GET_LOCAL for slot 0 (this) + OP_SUPER_INVOKE.
+Handle constructor calls: When OP_CALL targets a class definition, automatically create an instance and invoke the constructor.
+Add ClassDeclStmt, ThisExpr, SuperExpr imports.
 
+VM — Object Model
+[MODIFY]
+objects.py
+Add two new object types:
 
----
+python
 
-## 🌟 Key Highlights & Language Design
+class ObjClass(Obj):
+"""Runtime class definition with fields, methods, and optional parent."""
+name: str
+field_names: list[str]
+field_indices: dict[str, int]
+methods: dict[str, ObjClosure]
+parent: ObjClass | None
+class ObjInstance(Obj):
+"""An instance of a class."""
+klass: ObjClass
+fields: list[Any]
+ObjInstance replaces ObjStructInstance for class-based objects. ObjClass replaces ObjStructDef for class-based definitions. Both support trace_references() for GC.
 
-Fresh merges the expressive readability of modern languages with the predictable performance of a bytecode VM and C native code generator:
+VM — Execution Engine
+[MODIFY]
+vm.py
+OP_CLASS_DEF handler: Create ObjClass, register it in globals and a new class_defs dict.
+OP_METHOD handler: Pop the closure and bind it to the class at TOS.
+OP_INHERIT handler: Copy parent methods into child class methods dict.
+OP_GET_THIS handler: Push self.stack[frame.stack_base].
+OP_SUPER_INVOKE handler: Look up the method in the parent class, create a bound call.
+\_call_value extension: When calling an ObjClass, allocate a new ObjInstance, push it, invoke the constructor if present.
+OP_GET_FIELD / OP_SET_FIELD extension: Handle ObjInstance in addition to ObjStructInstance. For OP_GET_FIELD, also check methods on the instance's class (bound method lookup).
+VM — Value Display
+[MODIFY]
+value.py
+Add formatting for ObjInstance: display as ClassName { field: val, ... }.
 
-- **Static Typing with Local Inference**: Strict compile-time type verification with automatic type inference on `let` bindings.
-- **Top-Down Operator Precedence (Pratt Parser)**: Clean, robust expression parsing with exact precedence levels and recursion bounds.
-- **Visual Rust-Style Diagnostics**: Clear underline markers and error codes (`[E1001]` to `[E4001]`) for syntax and type errors.
-- **First-Class Closures & Upvalues**: Functions capture variables across scopes with state persistence.
-- **Pattern Matching with Guards**: Powerful `match` expressions supporting values, wildcards (`_`), and conditional `if` guard clauses.
-- **User-Defined Records & Structs**: Strongly typed struct records with in-place mutable fields.
-- **Dynamic Arrays & Matrices**: Native `[T]` arrays with `push`, `pop`, `len`, and multi-dimensional indexing.
-- **Mark-and-Sweep Garbage Collection**: Automatic memory management tracing stacks, upvalues, and globals with `FRESH_GC_STRESS=1` allocation mode.
-- **Native C Transpiler**: Compiles Fresh code directly to readable C99 with 1:1 behavioral equivalence for native binary builds (`gcc`, `clang`, `msvc`).
-- **Complete Developer Tooling**: Built-in formatter (`fresh fmt`), package manager (`fresh init`/`fresh build`), type checker (`fresh check`), and REPL (`fresh repl`).
+Disassembler
+[MODIFY]
+disassembler.py
+Add disassembly for the new opcodes: OP_CLASS_DEF, OP_METHOD, OP_INHERIT, OP_GET_THIS, OP_SUPER_INVOKE.
 
----
+Code Formatter
+[MODIFY]
+formatter.py
+Add formatting for ClassDeclStmt, ThisExpr, SuperExpr in both statement and expression formatters.
 
-## 🏗 Architecture & Compiler Pipeline
+C Transpiler
+[MODIFY]
+c_transpiler.py
+Add basic class transpilation: classes become C typedef struct with method functions taking an explicit self pointer. Inheritance maps to struct embedding.
 
-Fresh uses a unified multi-stage pipeline:
+Documentation & Examples
+[MODIFY]
+LANGUAGE_GUIDE.md
+Add a new section "Classes & Object-Oriented Programming" covering:
 
-```mermaid
-graph TD
-    A["Source Code (.fresh)"] --> B["Scanner / Lexer"]
-    B -->|"Token Stream"| C["Pratt Parser"]
-    C -->|"Abstract Syntax Tree (AST)"| D["Module Loader & Cycle Checker"]
-    D -->|"Expanded AST"| E["Resolver & Scope Checker"]
-    E -->|"Scoped AST"| F["Type Checker & Inferrer"]
-    
-    F -->|"Typed AST"| G["Bytecode Compiler"]
-    G -->|"Bytecode Chunk"| H["Peephole Optimizer"]
-    H -->|"Optimized Bytecode"| I["Virtual Machine (VM + GC)"]
-    I -->|"Runtime Output"| J["Program Result"]
-    
-    F -.->|"Typed AST"| K["C99 Transpiler"]
-    K -.->|"Native C Source"| L["C Compiler (GCC / Clang)"]
-    L -.->|"Native Binary"| M["Standalone Executable"]
-```
+Class declarations with fields and methods
+Constructors and this
+Single inheritance with : Parent and super
+Method overriding
+Complete examples
+[NEW] examples/oop_demo.fresh
+A comprehensive demo file exercising all OOP features: classes, constructors, methods, inheritance, method overriding, and polymorphic usage.
 
----
+[MODIFY]
+all_features.fresh
+Add an OOP section at the end of the feature showcase.
 
-## 💻 Command-Line Interface (CLI)
+Verification Plan
+Automated Tests
+bash
 
-The `fresh` CLI provides an all-in-one developer toolkit:
+python -m pytest tests/ -v
+All existing tests must continue to pass (no regressions to struct, function, or other features).
 
-| Command | Usage | Description |
-| :--- | :--- | :--- |
-| **`fresh run <file>`** | `fresh run main.fresh` | Compiles and executes a Fresh script on the Bytecode VM. |
-| **`fresh check <file>`** | `fresh check main.fresh` | Static analysis: checks types and resolves names without running. |
-| **`fresh fmt <file>`** | `fresh fmt main.fresh [--check]` | Formats source files idempotently according to standard Fresh style. |
-| **`fresh init <name>`** | `fresh init my_app` | Scaffolds a new project with directory structure and `fresh.toml`. |
-| **`fresh build [dir]`** | `fresh build .` | Builds the project entrypoint into a standalone native executable. |
-| **`fresh test [dir]`** | `fresh test tests/` | Runs the automated pytest test suite. |
-| **`fresh repl`** | `fresh repl` | Starts an interactive Read-Eval-Print-Loop session. |
-
-### Compiler Inspection Flags
-
-Inspect intermediate representations at any phase of compilation:
-
-```bash
-# Print token stream produced by lexical analysis
-fresh run main.fresh --dump-tokens
-
-# Print formatted Abstract Syntax Tree
-fresh run main.fresh --dump-ast
-
-# Print disassembled bytecode instructions & constant pool
-fresh run main.fresh --disassemble
-
-# Transpile Fresh AST directly into standalone C99 source code
-fresh run main.fresh --emit-c
-```
-
----
-
-## 🛠 VS Code Integration & 1-Click Execution
-
-The workspace includes ready-to-use VS Code configurations:
-
-1. **Press `F5`**: Runs the currently active `.fresh` file in the integrated terminal.
-2. **Press `Ctrl + Shift + B`**: Executes the default build task (`Fresh: Run Active File`).
-3. **Command Palette (`Ctrl + Shift + P` -> `Tasks: Run Task`)**:
-   - `Fresh: Run Active File`
-   - `Fresh: Type Check Active File`
-   - `Fresh: Format Active File`
-   - `Fresh: Run Test Suite`
-4. **Syntax Highlighting & File Icons**: Included in [`vscode-extension/`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/vscode-extension/).
-
----
-
-## 🧩 Feature Showcase & Code Examples
-
-Explore ready-to-run examples in the [`examples/`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/) directory:
-
-| Example File | Key Concept Demonstrated |
-| :--- | :--- |
-| [`all_features.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/all_features.fresh) | **Complete Tour**: Primitives, closures, matrices, structs, pattern matching, stdlib, file I/O |
-| [`01_fibonacci.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/01_fibonacci.fresh) | Recursive function calls, conditional returns, arithmetic |
-| [`02_matrix_multiply.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/02_matrix_multiply.fresh) | 2D dynamic arrays, nested loops, matrix multiplication |
-| [`03_quicksort.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/03_quicksort.fresh) | In-place array mutation, indexing, partition algorithm |
-| [`04_closure_counter.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/04_closure_counter.fresh) | Lexical closures, upvalue mutation across multiple function calls |
-| [`05_calculator.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/05_calculator.fresh) | First-class functions, higher-order function dispatch |
-| [`06_inventory.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/06_inventory.fresh) | User-defined structs, field mutations, inventory calculations |
-| [`07_stress_suite.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/07_stress_suite.fresh) | End-to-end stress test across all core language features |
-| [`08_aggressive_suite.fresh`](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/examples/08_aggressive_suite.fresh) | Deep recursion (Ackermann), map/filter higher-order lambdas, pattern guards |
-
----
-
-## 📂 Project Directory Structure
-
-```text
-NEW_LANG/
-├── all_features.fresh         # Complete feature showcase script
-├── LANGUAGE_GUIDE.md          # Comprehensive language tutorial and handbook
-├── README.md                  # Main project documentation (this file)
-├── pyproject.toml             # Python build metadata & tool configuration
-├── docs/                      # In-depth architectural documentation
-│   ├── README.md              # Documentation Hub and Reading Paths
-│   ├── specification.md       # Normative EBNF grammar & language specification
-│   ├── architecture.md        # Compiler, VM, and C transpiler internal architecture
-│   ├── comparison.md          # Academic comparative analysis vs Python, C, Rust
-│   ├── standard_library.md    # Standard library & built-ins API reference
-│   ├── cli_and_tooling.md     # Unified CLI, fresh.toml, and VS Code manual
-│   ├── release_and_packaging.md # PyPI packaging, standalone binaries & CI/CD
-│   ├── compatibility.md       # SemVer guarantees & diagnostic error codes catalog
-│   └── presentation_guide.md  # 15-minute live demo and presentation script
-├── examples/                  # Official runnable example programs
-├── src/fresh/                 # Fresh compiler & runtime core package
-│   ├── analyzer/              # Semantic analysis (Resolver, Type Checker)
-│   ├── codegen/               # Bytecode compiler, optimizer, and C transpiler
-│   ├── common/                # Shared AST tokens, type definitions, error types
-│   ├── lexer/                 # Scanner and token definitions
-│   ├── parser/                # Pratt expression parser and statement AST
-│   ├── stdlib/                # Built-in functions and math library
-│   ├── vm/                    # Virtual machine, CallFrame, and Mark-and-Sweep GC
-│   ├── cli.py                 # Command-line interface driver
-│   ├── formatter.py           # Canonical source code formatter
-│   ├── modules.py             # Multi-file module loader and cycle detector
-│   ├── package.py             # Package manager (init & build)
-│   └── pipeline.py            # Unified end-to-end execution pipeline
-├── tests/                     # 97 automated tests across all subsystems
-└── vscode-extension/          # Official VS Code syntax highlighter & icons
-```
-
----
-
-## 📚 Documentation Index
-
-For in-depth guides, visit the [**Documentation Hub (`docs/README.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/README.md) or jump directly to:
-
-- 📘 [**Language Guide (`LANGUAGE_GUIDE.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/LANGUAGE_GUIDE.md): Complete language tutorial from variables to closures and pattern matching.
-- 📖 [**Complete Syntax Handbook (`docs/syntax_handbook.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/syntax_handbook.md): Full syntax catalog with runnable code for variables, functions, structs, arrays, match, and file I/O.
-- 📐 [**Formal Specification (`docs/specification.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/specification.md): EBNF grammar, typing rules, and operational semantics.
-- 🏛 [**Architecture Guide (`docs/architecture.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/architecture.md): Deep-dive into compiler internals, AST structures, and VM bytecode engine.
-- 🔬 [**Comparative Analysis (`docs/comparison.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/comparison.md): Architectural comparison against Python, C, Rust, and Lox.
-- 📚 [**Standard Library (`docs/standard_library.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/standard_library.md): Comprehensive API reference for all built-ins and math functions.
-- 💻 [**CLI & Developer Tooling (`docs/cli_and_tooling.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/cli_and_tooling.md): CLI commands, flags, `fresh.toml`, and VS Code extension.
-- 📦 [**Release & Packaging (`docs/release_and_packaging.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/release_and_packaging.md): PyPI packaging, standalone binary compilation, and CI/CD.
-- 🛡 [**Compatibility & Diagnostics (`docs/compatibility.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/compatibility.md): SemVer policy and diagnostic codes catalog (`[E1001]`–`[E5001]`).
-- 🎓 [**Demonstration & Defense Guide (`docs/demonstration.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/demonstration.md): Complete presentation guide covering install, build, run, dual modes, tokens, C code, and defense Q&A.
-- 🎤 [**Presentation Guide (`docs/presentation_guide.md`)**](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/docs/presentation_guide.md): 15-minute live demo script with step-by-step walkthrough.
-
----
-
-## 🧪 Running the Test Suite
-
-Run the full automated test suite containing unit, integration, differential, safety, and GC stress tests:
-
-```bash
-# Run all tests
-pytest -v
-
-# Run with test coverage report
-pytest --cov=fresh --cov-report=term-missing
-```
-
----
-
-## 📄 License
-
-Fresh is open-source software distributed under the terms of the **[MIT License](file:///c:/Users/vihaa/OneDrive/Desktop/NEW_LANG/LICENSE)**.
+Manual Verification
+Run fresh run examples/oop_demo.fresh — verify class creation, method calls, inheritance, and overriding produce correct output.
+Run fresh run all_features.fresh — verify the new OOP section runs.
+Run fresh run examples/oop_demo.fresh --dump-ast — verify OOP AST nodes print correctly.
+Run fresh run examples/oop_demo.fresh --disassemble — verify OOP bytecode disassembles correctly.
+Run fresh check examples/oop_demo.fresh — verify static type checking works for classes.
+Run fresh fmt examples/oop_demo.fresh --check — verify the formatter handles class syntax.
