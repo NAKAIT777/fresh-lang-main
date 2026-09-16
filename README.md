@@ -1,260 +1,696 @@
-Add C++ OOP Concepts to Fresh Language
-Fresh currently supports struct as flat data records without behavior. This plan adds full C++-style Object-Oriented Programming: classes with methods, constructors, this, single inheritance, and method overriding.
+# 🍃 Fresh
 
-Proposed OOP Syntax for Fresh
-fresh
+### A modern, lightweight programming language built from scratch
 
-// ── Base class ──────────────────────────────────────────
+**Fresh** is a programming language and compiler project designed with a simple, readable syntax while providing the foundations of a complete compiled language.
+
+The project includes its own **lexer, parser, AST, semantic analysis, type checker, bytecode compiler, virtual machine, formatter, and C transpiler**.
+
+---
+
+## 🚀 Project Status
+
+Fresh currently supports several core language features, including:
+
+- Variables and expressions
+- Functions
+- Structs
+- Type checking
+- Bytecode compilation
+- Virtual machine execution
+- C transpilation
+- Code formatting
+- AST generation
+- Bytecode disassembly
+
+### 🆕 Object-Oriented Programming
+
+Fresh is being extended with **C++/Java-style Object-Oriented Programming**.
+
+The OOP system introduces:
+
+- Classes
+- Fields
+- Methods
+- Constructors
+- `this`
+- Single inheritance
+- `super`
+- Method overriding
+- Class instances
+- Inherited methods
+
+Existing `struct` declarations remain fully supported and unchanged.
+
+---
+
+# ✨ OOP Syntax
+
+Fresh uses a clean class syntax inspired by C++ and Java.
+
+## 🐾 Basic Class
+
+```fresh
 class Animal {
-name: string,
-age: int
-constructor(name: string, age: int) {
-this.name = name;
-this.age = age;
+    name: string,
+    age: int
+
+    constructor(name: string, age: int) {
+        this.name = name;
+        this.age = age;
+    }
+
+    fn speak() -> string {
+        return this.name + " makes a sound";
+    }
+
+    fn get_info() -> string {
+        return this.name + " (age " + to_string(this.age) + ")";
+    }
 }
-fn speak() -> string {
-return this.name + " makes a sound";
-}
-fn get_info() -> string {
-return this.name + " (age " + to_string(this.age) + ")";
-}
-}
-// ── Derived class (single inheritance) ──────────────────
+```
+
+---
+
+## 🐕 Inheritance
+
+Fresh supports **single inheritance** using `:`.
+
+```fresh
 class Dog : Animal {
-breed: string
-constructor(name: string, age: int, breed: string) {
-super(name, age);
-this.breed = breed;
+    breed: string
+
+    constructor(name: string, age: int, breed: string) {
+        super(name, age);
+        this.breed = breed;
+    }
+
+    fn speak() -> string {
+        return this.name + " says Woof!";
+    }
+
+    fn fetch(item: string) -> string {
+        return this.name + " fetches " + item;
+    }
 }
-// Override base method
-fn speak() -> string {
-return this.name + " says Woof!";
-}
-fn fetch(item: string) -> string {
-return this.name + " fetches " + item;
-}
-}
-// ── Usage ───────────────────────────────────────────────
+```
+
+---
+
+## ▶️ Using Classes
+
+Classes can be instantiated using the existing function-call style:
+
+```fresh
 let dog = Dog("Rex", 5, "German Shepherd");
-println(dog.speak()); // Rex says Woof!
-println(dog.get_info()); // Rex (age 5) — inherited method
-println(dog.fetch("ball")); // Rex fetches ball
-User Review Required
-IMPORTANT
 
-Syntax Design Decisions — The proposed syntax uses:
+println(dog.speak());
+println(dog.get_info());
+println(dog.fetch("ball"));
+```
 
-class Name { fields, constructor, methods } (C++/Java-style)
-constructor(...) instead of **init** or fn Name(...) (explicit, readable)
-this.field for instance access (C++/Java convention)
-class Child : Parent for inheritance (C++ convention)
-super(args) for parent constructor calls
-If you prefer different keywords (e.g., new for instantiation, extends instead of :), please let me know.
+Output:
 
-IMPORTANT
+```text
+Rex says Woof!
+Rex (age 5)
+Rex fetches ball
+```
 
-Scope of this change: This adds OOP on top of the existing struct system. Existing struct declarations remain fully supported and unchanged. Classes are a new, richer construct.
+The derived `Dog` class overrides `speak()` while still inheriting `get_info()` from `Animal`.
 
-Open Questions
-Access modifiers? — Should we add public/private field modifiers in this version, or keep it simple with all-public access?
-new keyword for instantiation? — Should we require let dog = new Dog(...) or keep the current function-call style let dog = Dog(...)? The plan uses the current style to stay consistent with struct instantiation.
-Static methods? — Should we include static fn class methods in this version, or defer to a future iteration?
-Proposed Changes
-The change touches every layer of the compiler pipeline. Files are grouped by component and ordered dependency-first.
+---
 
-Lexer (Token Definitions & Scanner)
-[MODIFY]
-tokens.py
-Add 4 new keyword tokens:
+# 🧩 OOP Design
 
-CLASS — class
-CONSTRUCTOR — constructor
-THIS — this
-SUPER — super
-Add them to both the TokenType enum and the KEYWORDS lookup table.
+The proposed OOP system follows these design decisions:
 
-[MODIFY]
-scanner.py
-No changes needed — the existing identifier/keyword scanning logic automatically picks up new KEYWORDS entries.
+| Feature            | Fresh Syntax                        |
+| ------------------ | ----------------------------------- |
+| Class              | `class Animal { ... }`              |
+| Field              | `name: string`                      |
+| Method             | `fn speak() -> string { ... }`      |
+| Constructor        | `constructor(...) { ... }`          |
+| Instance access    | `this.name`                         |
+| Inheritance        | `class Dog : Animal`                |
+| Parent constructor | `super(name, age)`                  |
+| Method overriding  | Define the same method in the child |
+| Object creation    | `Dog(...)`                          |
 
-Type System
-[MODIFY]
-types.py
-Add FreshClass type:
+The syntax intentionally stays consistent with Fresh's existing style while introducing familiar object-oriented concepts.
 
-python
+---
 
+# 🏗️ Compiler Architecture
+
+Adding OOP affects every major stage of the Fresh compiler pipeline.
+
+```text
+                 Fresh Source Code
+                        │
+                        ▼
+                  ┌───────────┐
+                  │   Lexer   │
+                  └─────┬─────┘
+                        │
+                        ▼
+                  ┌───────────┐
+                  │   Parser  │
+                  └─────┬─────┘
+                        │
+                        ▼
+                     AST
+                        │
+             ┌──────────┴──────────┐
+             ▼                     ▼
+       Semantic Analysis       Type Checker
+             │                     │
+             └──────────┬──────────┘
+                        ▼
+                Bytecode Compiler
+                        │
+                        ▼
+                   Bytecode
+                        │
+                        ▼
+                Virtual Machine
+                        │
+                        ▼
+                    Program
+```
+
+---
+
+# 🔧 Implementation Plan
+
+## 1. Lexer
+
+### `tokens.py`
+
+Add the following keyword tokens:
+
+```text
+CLASS
+CONSTRUCTOR
+THIS
+SUPER
+```
+
+They are also added to the `KEYWORDS` lookup table.
+
+### `scanner.py`
+
+No major changes are required because the existing keyword scanning mechanism automatically recognizes the new keywords.
+
+---
+
+# 🧱 Type System
+
+### `types.py`
+
+Introduce a new `FreshClass` type containing:
+
+```python
 @dataclass
 class FreshClass(FreshType):
-name: str = ""
-fields: dict[str, FreshType] = field(default_factory=dict)
-methods: dict[str, FreshFunction] = field(default_factory=dict)
-parent: FreshClass | None = None
-Includes parent reference for inheritance chain lookups. Field/method resolution walks the chain.
+    name: str = ""
+    fields: dict[str, FreshType] = field(default_factory=dict)
+    methods: dict[str, FreshFunction] = field(default_factory=dict)
+    parent: FreshClass | None = None
+```
 
-AST Node Definitions
-[MODIFY]
-ast.py
-Add 4 new AST node classes:
+The `parent` reference allows field and method lookup to walk through the inheritance chain.
 
-Node Family Purpose
-ClassDeclStmt Stmt Class declaration with fields, constructor, methods, optional parent
-ThisExpr Expr this keyword reference inside methods
-SuperExpr Expr super.method() call
-ConstructorDecl Helper Constructor parameter list and body
-python
+---
 
+# 🌳 AST
+
+The following AST nodes are introduced:
+
+### `ClassDeclStmt`
+
+Represents a class declaration.
+
+### `ThisExpr`
+
+Represents the `this` keyword inside a class.
+
+### `SuperExpr`
+
+Represents access to the parent class.
+
+### `ConstructorDecl`
+
+Represents a class constructor.
+
+Example structure:
+
+```python
 @dataclass(slots=True)
 class ConstructorDecl:
-keyword: Token
-params: list[Parameter]
-body: list[Stmt]
-super_args: list[Expr] | None = None # super(args) call
-@dataclass(slots=True)
-class ClassDeclStmt(Stmt):
-name: Token
-parent_name: Token | None
-fields: list[StructField]
-constructor: ConstructorDecl | None
-methods: list[FnDeclStmt]
-@dataclass(slots=True)
-class ThisExpr(Expr):
-keyword: Token
-@dataclass(slots=True)
-class SuperExpr(Expr):
-keyword: Token
-method: Token # the method name after super.
-Update ASTPrinter to format these new nodes.
+    keyword: Token
+    params: list[Parameter]
+    body: list[Stmt]
+    super_args: list[Expr] | None = None
+```
 
-Parser
-[MODIFY]
-parser.py
-Declaration routing: Add TokenType.CLASS check in \_declaration() → \_class_declaration().
-\_class_declaration(): Parse the full class syntax:
-Class name, optional : ParentName
-{ body with field declarations, constructor(...), and fn method declarations }
-this prefix rule: Map TokenType.THIS → \_this_expr() in the Pratt prefix table.
-super prefix rule: Map TokenType.SUPER → \_super_expr() — expects super.method_name or super(args) (in constructors).
-Error synchronization: Add TokenType.CLASS to the synchronization set.
-Semantic Analysis — Resolver
-[MODIFY]
-resolver.py
-Pre-declare class names in the top-level pass (alongside functions and structs).
-Resolve ClassDeclStmt: Open a new scope, declare this, resolve constructor body and method bodies.
-Track class context: Add current_class state to validate this/super usage (only legal inside class methods/constructors).
-Resolve ThisExpr and SuperExpr: Validate they appear inside a class context.
-Semantic Analysis — Type Checker
-[MODIFY]
-type_checker.py
-Register class types: In the pre-pass, build FreshClass objects with field types, method signatures, and parent references.
-Check ClassDeclStmt: Validate constructor assignments, method return types, field types.
-Check ThisExpr: Return the current class type.
-Check SuperExpr: Return the parent class type and validate the method exists on the parent.
-Check method calls: On CallExpr where callee is FieldAccessExpr on a class instance, resolve the method signature.
-Inheritance compatibility: FreshClass subtypes should be compatible with parent types (\_types_compatible).
-Bytecode — Opcodes
-[MODIFY]
-opcodes.py
-Add new opcodes:
+The AST printer is also updated to display the new OOP nodes.
 
-Opcode Operands Description
-OP_CLASS_DEF name_idx, field_count Define a class (fields + methods)
-OP_METHOD name_idx Bind a closure as a method on the class
-OP_INHERIT — Copy parent methods into child class
-OP_GET_THIS — Push this (slot 0 of current method frame)
-OP_SUPER_INVOKE method_name_idx, arg_count Invoke a method on the superclass
-Bytecode Compiler
-[MODIFY]
-compiler.py
-Compile ClassDeclStmt:
-Emit OP_CLASS_DEF with field names
-If parent: emit OP_GET_GLOBAL for parent, OP_INHERIT
-Compile constructor as a special function (with this in slot 0)
-Compile each method as a closure, emit OP_METHOD to bind it
-Define the class name as a global
-Compile ThisExpr: Emit OP_GET_LOCAL for slot 0 (this is always slot 0 in methods).
-Compile SuperExpr: Emit OP_GET_LOCAL for slot 0 (this) + OP_SUPER_INVOKE.
-Handle constructor calls: When OP_CALL targets a class definition, automatically create an instance and invoke the constructor.
-Add ClassDeclStmt, ThisExpr, SuperExpr imports.
+---
 
-VM — Object Model
-[MODIFY]
-objects.py
-Add two new object types:
+# 🧠 Parser
 
-python
+### `parser.py`
 
-class ObjClass(Obj):
-"""Runtime class definition with fields, methods, and optional parent."""
-name: str
-field_names: list[str]
-field_indices: dict[str, int]
-methods: dict[str, ObjClosure]
-parent: ObjClass | None
-class ObjInstance(Obj):
-"""An instance of a class."""
-klass: ObjClass
-fields: list[Any]
-ObjInstance replaces ObjStructInstance for class-based objects. ObjClass replaces ObjStructDef for class-based definitions. Both support trace_references() for GC.
+The parser will recognize:
 
-VM — Execution Engine
-[MODIFY]
-vm.py
-OP_CLASS_DEF handler: Create ObjClass, register it in globals and a new class_defs dict.
-OP_METHOD handler: Pop the closure and bind it to the class at TOS.
-OP_INHERIT handler: Copy parent methods into child class methods dict.
-OP_GET_THIS handler: Push self.stack[frame.stack_base].
-OP_SUPER_INVOKE handler: Look up the method in the parent class, create a bound call.
-\_call_value extension: When calling an ObjClass, allocate a new ObjInstance, push it, invoke the constructor if present.
-OP_GET_FIELD / OP_SET_FIELD extension: Handle ObjInstance in addition to ObjStructInstance. For OP_GET_FIELD, also check methods on the instance's class (bound method lookup).
-VM — Value Display
-[MODIFY]
-value.py
-Add formatting for ObjInstance: display as ClassName { field: val, ... }.
+```fresh
+class Animal {
+    ...
+}
+```
 
-Disassembler
-[MODIFY]
-disassembler.py
-Add disassembly for the new opcodes: OP_CLASS_DEF, OP_METHOD, OP_INHERIT, OP_GET_THIS, OP_SUPER_INVOKE.
+and route class declarations through:
 
-Code Formatter
-[MODIFY]
-formatter.py
-Add formatting for ClassDeclStmt, ThisExpr, SuperExpr in both statement and expression formatters.
+```text
+_declaration()
+    └── _class_declaration()
+```
 
-C Transpiler
-[MODIFY]
-c_transpiler.py
-Add basic class transpilation: classes become C typedef struct with method functions taking an explicit self pointer. Inheritance maps to struct embedding.
+The parser also adds support for:
 
-Documentation & Examples
-[MODIFY]
+```fresh
+this.name
+```
+
+and:
+
+```fresh
+super.speak()
+```
+
+as well as:
+
+```fresh
+super(name, age)
+```
+
+inside constructors.
+
+---
+
+# 🔍 Semantic Analysis
+
+### `resolver.py`
+
+The resolver will:
+
+- Pre-declare class names
+- Create a class scope
+- Declare `this`
+- Resolve constructors
+- Resolve methods
+- Track the current class context
+- Validate `this`
+- Validate `super`
+- Prevent class-only features from being used outside classes
+
+For example:
+
+```fresh
+this.name
+```
+
+is only valid within a class method or constructor.
+
+---
+
+# 🧪 Type Checking
+
+### `type_checker.py`
+
+The type checker will:
+
+- Register class types
+- Check field types
+- Check method signatures
+- Check constructor parameters
+- Validate return types
+- Resolve `this`
+- Resolve `super`
+- Validate inherited methods
+- Check method calls
+- Support derived-to-parent type compatibility
+
+For example:
+
+```fresh
+class Dog : Animal {
+    ...
+}
+```
+
+allows a `Dog` instance to be used where an `Animal` is expected.
+
+---
+
+# ⚙️ Bytecode
+
+New bytecode operations are introduced for class support:
+
+| Opcode            | Purpose                     |
+| ----------------- | --------------------------- |
+| `OP_CLASS_DEF`    | Define a class              |
+| `OP_METHOD`       | Attach a method to a class  |
+| `OP_INHERIT`      | Establish inheritance       |
+| `OP_GET_THIS`     | Access the current instance |
+| `OP_SUPER_INVOKE` | Invoke a superclass method  |
+
+These operations allow the VM to efficiently represent classes and method calls.
+
+---
+
+# 🖥️ Virtual Machine
+
+### `objects.py`
+
+Fresh introduces runtime objects for classes and instances:
+
+```text
+ObjClass
+ObjInstance
+```
+
+`ObjClass` contains:
+
+- Class name
+- Fields
+- Methods
+- Parent class
+
+`ObjInstance` contains:
+
+- Reference to its class
+- Instance field values
+
+---
+
+## Method Lookup
+
+When executing:
+
+```fresh
+dog.speak()
+```
+
+the VM searches the object's class for `speak()`.
+
+If the method is not found directly on the class, inherited methods can be resolved through the parent class.
+
+This allows:
+
+```fresh
+dog.get_info()
+```
+
+to call a method inherited from `Animal`.
+
+---
+
+# 🔄 Method Overriding
+
+A child class can define a method with the same name as its parent:
+
+```fresh
+class Animal {
+    fn speak() -> string {
+        return "Animal sound";
+    }
+}
+
+class Dog : Animal {
+    fn speak() -> string {
+        return "Woof!";
+    }
+}
+```
+
+Calling:
+
+```fresh
+dog.speak()
+```
+
+uses the `Dog` implementation.
+
+---
+
+# 🧰 Tooling
+
+OOP support will also be integrated into Fresh's development tools.
+
+### Disassembler
+
+`disassembler.py` will support:
+
+```text
+OP_CLASS_DEF
+OP_METHOD
+OP_INHERIT
+OP_GET_THIS
+OP_SUPER_INVOKE
+```
+
+### Formatter
+
+`formatter.py` will format:
+
+- Class declarations
+- Fields
+- Constructors
+- Methods
+- `this`
+- `super`
+
+### C Transpiler
+
+`c_transpiler.py` will provide basic class translation using C structures.
+
+Conceptually:
+
+```text
+Fresh Class
+     │
+     ▼
+C typedef struct
+     │
+     ├── Fields
+     │
+     └── Method functions
+```
+
+Inheritance can be represented through structure embedding.
+
+---
+
+# 📚 Documentation
+
+The OOP documentation will be available in:
+
+```text
 LANGUAGE_GUIDE.md
-Add a new section "Classes & Object-Oriented Programming" covering:
+```
 
-Class declarations with fields and methods
-Constructors and this
-Single inheritance with : Parent and super
-Method overriding
-Complete examples
-[NEW] examples/oop_demo.fresh
-A comprehensive demo file exercising all OOP features: classes, constructors, methods, inheritance, method overriding, and polymorphic usage.
+A dedicated OOP section will cover:
 
-[MODIFY]
-all_features.fresh
-Add an OOP section at the end of the feature showcase.
+- Classes
+- Fields
+- Methods
+- Constructors
+- `this`
+- Inheritance
+- `super`
+- Method overriding
+- Complete examples
 
-Verification Plan
-Automated Tests
-bash
+---
 
+# 📁 Project Structure
+
+```text
+fresh-lang-main/
+│
+├── src/
+│   ├── tokens.py
+│   ├── scanner.py
+│   ├── ast.py
+│   ├── parser.py
+│   ├── resolver.py
+│   ├── types.py
+│   ├── type_checker.py
+│   ├── compiler.py
+│   ├── objects.py
+│   ├── opcodes.py
+│   ├── vm.py
+│   ├── value.py
+│   ├── disassembler.py
+│   ├── formatter.py
+│   └── c_transpiler.py
+│
+├── examples/
+│   └── oop_demo.fresh
+│
+├── tests/
+│
+├── docs/
+│
+├── LANGUAGE_GUIDE.md
+├── all_features.fresh
+└── README.md
+```
+
+---
+
+# 🧪 Verification
+
+All existing functionality should continue to work after the OOP implementation.
+
+Run the complete test suite:
+
+```bash
 python -m pytest tests/ -v
-All existing tests must continue to pass (no regressions to struct, function, or other features).
+```
 
-Manual Verification
-Run fresh run examples/oop_demo.fresh — verify class creation, method calls, inheritance, and overriding produce correct output.
-Run fresh run all_features.fresh — verify the new OOP section runs.
-Run fresh run examples/oop_demo.fresh --dump-ast — verify OOP AST nodes print correctly.
-Run fresh run examples/oop_demo.fresh --disassemble — verify OOP bytecode disassembles correctly.
-Run fresh check examples/oop_demo.fresh — verify static type checking works for classes.
-Run fresh fmt examples/oop_demo.fresh --check — verify the formatter handles class syntax.
+OOP functionality can then be manually verified with:
+
+```bash
+fresh run examples/oop_demo.fresh
+```
+
+AST output:
+
+```bash
+fresh run examples/oop_demo.fresh --dump-ast
+```
+
+Bytecode:
+
+```bash
+fresh run examples/oop_demo.fresh --disassemble
+```
+
+Type checking:
+
+```bash
+fresh check examples/oop_demo.fresh
+```
+
+Formatter:
+
+```bash
+fresh fmt examples/oop_demo.fresh --check
+```
+
+---
+
+# ❓ Design Questions
+
+The following features can be considered for future iterations:
+
+### Access Modifiers
+
+Should Fresh eventually support:
+
+```fresh
+public
+private
+protected
+```
+
+The initial implementation keeps fields and methods simple without access modifiers.
+
+### `new` Keyword
+
+The current design uses:
+
+```fresh
+let dog = Dog(...)
+```
+
+rather than:
+
+```fresh
+let dog = new Dog(...)
+```
+
+This maintains consistency with existing struct instantiation.
+
+### Static Methods
+
+Static methods can be introduced as a future extension:
+
+```fresh
+static fn create() -> Animal {
+    ...
+}
+```
+
+---
+
+# 🎯 Goals
+
+The OOP extension aims to make Fresh capable of expressing larger programs while keeping its syntax straightforward.
+
+The implementation focuses on:
+
+- 🧩 Simple class syntax
+- 🔗 Single inheritance
+- 🏗️ Constructors
+- 🎯 Instance methods
+- 👤 `this`
+- ⬆️ `super`
+- 🔄 Method overriding
+- 🧠 Static type checking
+- ⚡ Bytecode execution
+- 🛠️ Integrated compiler tooling
+
+---
+
+# 🌱 Fresh Language
+
+Fresh is being developed as a complete programming-language project, from source code all the way to execution.
+
+```text
+Source
+  ↓
+Lexer
+  ↓
+Parser
+  ↓
+AST
+  ↓
+Semantic Analysis
+  ↓
+Type Checker
+  ↓
+Bytecode Compiler
+  ↓
+Virtual Machine
+  ↓
+Execution
+```
+
+**Fresh is built to keep programming simple, readable, and — well — fresh. 🍃**
+
+---
+
+## 📄 License
+
+See the repository for license information.
+
+---
+
+<p align="center">
+  <b>🍃 Fresh Language</b><br>
+  A programming language built from the ground up.
+</p>
